@@ -68,7 +68,7 @@ class GoToObjectEnv(MiniGridEnv):
     def step(self, action):
         obs, reward, done, info = MiniGridEnv.step(self, action)
 
-        ax, ay = self.agent_pos
+        ax, ay = self.agents[self.DEFAULT_AGENT_ID].pos
         tx, ty = self.target_pos
 
         # Toggle/pickup action terminates the episode

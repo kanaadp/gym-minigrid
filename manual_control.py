@@ -28,7 +28,7 @@ def reset():
 
 def step(action):
     obs, reward, done, info = env.step(action)
-    print('step=%s, reward=%.2f' % (env.step_count, reward))
+    print('step=%s, reward=%.2f' % (env.agents[env.DEFAULT_AGENT_ID].step_count, reward))
 
     if done:
         print('done!')

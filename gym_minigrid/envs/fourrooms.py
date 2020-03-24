@@ -53,9 +53,9 @@ class FourRoomsEnv(MiniGridEnv):
 
         # Randomize the player start position and orientation
         if self._agent_default_pos is not None:
-            self.agent_pos = self._agent_default_pos
+            self.agents[self.DEFAULT_AGENT_ID].pos = self._agent_default_pos
             self.grid.set(*self._agent_default_pos, None)
-            self.agent_dir = self._rand_int(0, 4)  # assuming random start direction
+            self.agents[self.DEFAULT_AGENT_ID].dir = self._rand_int(0, 4)  # assuming random start direction
         else:
             self.place_agent()
 
