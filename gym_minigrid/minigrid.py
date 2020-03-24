@@ -336,7 +336,7 @@ class Box(WorldObj):
         # Horizontal slit
         fill_coords(img, point_in_rect(0.16, 0.84, 0.47, 0.53), c)
 
-    def toggle(self, env, pos):
+    def toggle(self, env, pos, agent_id):
         # Replace the box by its contents
         env.grid.set(*pos, self.contains)
         return True
@@ -960,9 +960,13 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
                 continue
 
             # Don't place the object where the agent is
+            agent_overlap = False
             for agent in self.agents.values():
                 if np.array_equal(pos, agent.pos):
-                    continue
+                    agent_overlap = True
+                    break
+            if agent_overlap:
+                continue
 
             # Check if there is a filtering criterion
             if reject_fn and reject_fn(self, pos):
