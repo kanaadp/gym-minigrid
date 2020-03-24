@@ -74,9 +74,9 @@ class FetchEnv(MiniGridEnv):
     def step(self, action):
         obs, reward, done, info = MiniGridEnv.step(self, action)
 
-        if self.carrying:
-            if self.carrying.color == self.targetColor and \
-               self.carrying.type == self.targetType:
+        if self.agents[self.DEFAULT_AGENT_ID].carrying:
+            if self.agents[self.DEFAULT_AGENT_ID].carrying.color == self.targetColor and \
+               self.agents[self.DEFAULT_AGENT_ID].carrying.type == self.targetType:
                 reward = self._reward()
                 done = True
             else:

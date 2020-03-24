@@ -40,7 +40,7 @@ class BlockedUnlockPickup(RoomGrid):
         obs, reward, done, info = super().step(action)
 
         if action == self.actions.pickup:
-            if self.carrying and self.carrying == self.obj:
+            if self.agents[self.DEFAULT_AGENT_ID].carrying and self.agents[self.DEFAULT_AGENT_ID].carrying == self.obj:
                 reward = self._reward()
                 done = True
 

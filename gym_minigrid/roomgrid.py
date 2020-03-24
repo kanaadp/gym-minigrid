@@ -6,7 +6,7 @@ def reject_next_to(env, pos):
     the agent's starting point
     """
 
-    sx, sy = env.agent_pos
+    sx, sy = env.agents[env.DEFAULT_AGENT_ID].pos
     x, y = pos
     d = abs(sx - x) + abs(sy - y)
     return d < 2
@@ -162,11 +162,11 @@ class RoomGrid(MiniGridEnv):
                     room.door_pos[3] = room.neighbors[3].door_pos[1]
 
         # The agent starts in the middle, facing right
-        self.agent_pos = (
+        self.agents[self.DEFAULT_AGENT_ID].pos = (
             (self.num_cols // 2) * (self.room_size-1) + (self.room_size // 2),
             (self.num_rows // 2) * (self.room_size-1) + (self.room_size // 2)
         )
-        self.agent_dir = 0
+        self.agents[self.DEFAULT_AGENT_ID].dir = 0
 
     def place_in_room(self, i, j, obj):
         """
@@ -296,11 +296,11 @@ class RoomGrid(MiniGridEnv):
         # Find a position that is not right in front of an object
         while True:
             super().place_agent(room.top, room.size, rand_dir, max_tries=1000)
-            front_cell = self.grid.get(*self.front_pos)
+            front_cell = self.grid.get(*self.front_pos())
             if front_cell is None or front_cell.type is 'wall':
                 break
 
-        return self.agent_pos
+        return self.agents[self.DEFAULT_AGENT_ID].pos
 
     def connect_all(self, door_colors=COLOR_NAMES, max_itrs=5000):
         """
@@ -308,7 +308,7 @@ class RoomGrid(MiniGridEnv):
         starting position
         """
 
-        start_room = self.room_from_pos(*self.agent_pos)
+        start_room = self.room_from_pos(*self.agents[self.DEFAULT_AGENT_ID].pos)
 
         added_doors = []
 

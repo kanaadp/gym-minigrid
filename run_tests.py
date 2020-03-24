@@ -41,12 +41,12 @@ for env_idx, env_name in enumerate(env_list):
     while num_episodes < 5:
         # Pick a random action
         action = random.randint(0, env.action_space.n - 1)
-
+        
         obs, reward, done, info = env.step(action)
 
         # Validate the agent position
-        assert env.agent_pos[0] < env.width
-        assert env.agent_pos[1] < env.height
+        assert env.agents[env.DEFAULT_AGENT_ID].pos[0] < env.width
+        assert env.agents[env.DEFAULT_AGENT_ID].pos[1] < env.height
 
         # Test observation encode/decode roundtrip
         img = obs['image']
