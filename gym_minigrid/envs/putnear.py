@@ -93,7 +93,7 @@ class PutNearEnv(MiniGridEnv):
 
         obs, reward, done, info = super().step(action)
 
-        u, v = self.dir_vec
+        u, v = self.dir_vec()
         ox, oy = (self.agents[self.DEFAULT_AGENT_ID].pos[0] + u, self.agents[self.DEFAULT_AGENT_ID].pos[1] + v)
         tx, ty = self.target_pos
 
