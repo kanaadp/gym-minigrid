@@ -89,17 +89,17 @@ class PutNearEnv(MiniGridEnv):
         )
 
     def step(self, action):
-        preCarrying = self.agents[self.DEFAULT_AGENT_ID].carrying
+        preCarrying = self.agents[DEFAULT_AGENT_ID].carrying
 
         obs, reward, done, info = super().step(action)
 
         u, v = self.dir_vec()
-        ox, oy = (self.agents[self.DEFAULT_AGENT_ID].pos[0] + u, self.agents[self.DEFAULT_AGENT_ID].pos[1] + v)
+        ox, oy = (self.agents[DEFAULT_AGENT_ID].pos[0] + u, self.agents[DEFAULT_AGENT_ID].pos[1] + v)
         tx, ty = self.target_pos
 
         # If we picked up the wrong object, terminate the episode
-        if action == self.actions.pickup and self.agents[self.DEFAULT_AGENT_ID].carrying:
-            if self.agents[self.DEFAULT_AGENT_ID].carrying.type != self.move_type or self.agents[self.DEFAULT_AGENT_ID].carrying.color != self.moveColor:
+        if action == self.actions.pickup and self.agents[DEFAULT_AGENT_ID].carrying:
+            if self.agents[DEFAULT_AGENT_ID].carrying.type != self.move_type or self.agents[DEFAULT_AGENT_ID].carrying.color != self.moveColor:
                 done = True
 
         # If successfully dropping an object near the target

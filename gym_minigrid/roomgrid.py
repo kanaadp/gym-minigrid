@@ -1,5 +1,6 @@
 from .minigrid import *
 
+
 def reject_next_to(env, pos):
     """
     Function to filter out object positions that are right next to
@@ -10,6 +11,7 @@ def reject_next_to(env, pos):
     x, y = pos
     d = abs(sx - x) + abs(sy - y)
     return d < 2
+
 
 class Room:
     def __init__(
@@ -59,6 +61,7 @@ class Room:
             return False
 
         return True
+
 
 class RoomGrid(MiniGridEnv):
     """
@@ -162,11 +165,11 @@ class RoomGrid(MiniGridEnv):
                     room.door_pos[3] = room.neighbors[3].door_pos[1]
 
         # The agent starts in the middle, facing right
-        self.agents[self.DEFAULT_AGENT_ID].pos = (
+        self.agents[DEFAULT_AGENT_ID].pos = (
             (self.num_cols // 2) * (self.room_size-1) + (self.room_size // 2),
             (self.num_rows // 2) * (self.room_size-1) + (self.room_size // 2)
         )
-        self.agents[self.DEFAULT_AGENT_ID].dir = 0
+        self.agents[DEFAULT_AGENT_ID].dir = 0
 
     def place_in_room(self, i, j, obj):
         """
@@ -300,7 +303,7 @@ class RoomGrid(MiniGridEnv):
             if front_cell is None or front_cell.type is 'wall':
                 break
 
-        return self.agents[self.DEFAULT_AGENT_ID].pos
+        return self.agents[DEFAULT_AGENT_ID].pos
 
     def connect_all(self, door_colors=COLOR_NAMES, max_itrs=5000):
         """
@@ -308,7 +311,7 @@ class RoomGrid(MiniGridEnv):
         starting position
         """
 
-        start_room = self.room_from_pos(*self.agents[self.DEFAULT_AGENT_ID].pos)
+        start_room = self.room_from_pos(*self.agents[DEFAULT_AGENT_ID].pos)
 
         added_doors = []
 

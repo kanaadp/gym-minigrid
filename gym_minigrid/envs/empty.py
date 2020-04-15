@@ -34,8 +34,8 @@ class EmptyEnv(MiniGridEnv):
 
         # Place the agent
         if self.agent_start_pos is not None:
-            self.agents[self.DEFAULT_AGENT_ID].pos = self.agent_start_pos
-            self.agents[self.DEFAULT_AGENT_ID].dir = self.agent_start_dir
+            self.agents[DEFAULT_AGENT_ID].pos = self.agent_start_pos
+            self.agents[DEFAULT_AGENT_ID].dir = self.agent_start_dir
         else:
             self.place_agent()
 

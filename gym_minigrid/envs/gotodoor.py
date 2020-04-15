@@ -65,7 +65,7 @@ class GoToDoorEnv(MiniGridEnv):
     def step(self, action):
         obs, reward, done, info = super().step(action)
 
-        ax, ay = self.agents[self.DEFAULT_AGENT_ID].pos
+        ax, ay = self.agents[DEFAULT_AGENT_ID].pos
         tx, ty = self.target_pos
 
         # Don't let the agent open any of the doors

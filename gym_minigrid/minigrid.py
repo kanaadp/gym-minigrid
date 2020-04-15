@@ -9,6 +9,7 @@ from .rendering import *
 
 # Size in pixels of a tile in the full-scale human view
 TILE_PIXELS = 32
+DEFAULT_AGENT_ID = 'default'
 
 # Map of color names to RGB values
 COLORS = {
@@ -154,8 +155,9 @@ class WorldObj:
 
 
 class Goal(WorldObj):
-    def __init__(self):
+    def __init__(self, agent_id=DEFAULT_AGENT_ID):
         super().__init__('goal', 'green')
+        self.agent_id = agent_id
 
     def can_overlap(self):
         return True
@@ -532,12 +534,14 @@ class Grid:
 
                 for agent_id in range(len(agent_poses)):
                     agent_here = np.array_equal(agent_poses[agent_id], (i, j))
-                    tile_img = Grid.render_tile(
-                        cell,
-                        agent_dir=agent_dirs[agent_id] if agent_here else None,
-                        highlight=highlight_mask[i, j],
-                        tile_size=tile_size
-                    )
+                    if agent_here:
+                        break
+                tile_img = Grid.render_tile(
+                    cell,
+                    agent_dir=agent_dirs[agent_id] if agent_here else None,
+                    highlight=highlight_mask[i, j],
+                    tile_size=tile_size
+                )
 
                 ymin = j * tile_size
                 ymax = (j+1) * tile_size
@@ -663,8 +667,6 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 10
     }
-
-    DEFAULT_AGENT_ID = 'default'
     DEFAULT_AGENT_LIST = [DEFAULT_AGENT_ID]
 
     # Enumeration of possible actions
@@ -736,7 +738,7 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
         self.see_through_walls = see_through_walls
 
         # Create agents
-        self.multiagent = False
+        self.multiagent = multiagent
         self.num_agents = len(agent_ids)
         self.agent_ids = agent_ids
         self.agents = {agent_id: Agent(agent_id) for agent_id in agent_ids}
@@ -769,8 +771,14 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
         self.env_step_count = 0
 
         # Return first observation
-        obs = self.gen_obs()
-        return obs
+        obs_dict = {}
+        for agent_id in self.agent_ids:
+            obs_dict[agent_id] = self.gen_obs(agent_id)
+
+        if self.multiagent:
+            return obs_dict
+        else:
+            return obs_dict[DEFAULT_AGENT_ID]
 
     def seed(self, seed=1337):
         # Seed the random number generator
@@ -1135,9 +1143,10 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
 
         if not self.multiagent:
             assert self.num_agents == 1, "Invalid action!"
-            agent_actions = {MiniGridEnv.DEFAULT_AGENT_ID: agent_actions}
+            agent_actions = {DEFAULT_AGENT_ID: agent_actions}
         else:
-            assert self.num_agents == len(agent_actions), "Incorrect number of agent_actions"
+            num_active = len([agent_id for agent_id in self.agent_ids if not self.agents[agent_id].done])
+            assert num_active == len(agent_actions), "Incorrect number of agent_actions"
 
         reward_dict = {}
         for agent_id, action in agent_actions.items():
@@ -1167,8 +1176,9 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
                 if fwd_cell == None or fwd_cell.can_overlap():
                     self.agents[agent_id].pos = fwd_pos
                 if fwd_cell != None and fwd_cell.type == 'goal':
-                    self.agents[agent_id].done = True
-                    reward_dict[agent_id] = self._reward(agent_id=agent_id)
+                    if fwd_cell.agent_id == agent_id:
+                        self.agents[agent_id].done = True
+                        reward_dict[agent_id] = self._reward(agent_id=agent_id)
                 if fwd_cell != None and fwd_cell.type == 'lava':
                     self.agents[agent_id].done = True
 
@@ -1215,7 +1225,7 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
         if self.multiagent:
             return obs_dict, reward_dict, done_dict, {}
         else:
-            return obs_dict[MiniGridEnv.DEFAULT_AGENT_ID], reward_dict[MiniGridEnv.DEFAULT_AGENT_ID], done_dict['__all__'], {}
+            return obs_dict[DEFAULT_AGENT_ID], reward_dict[DEFAULT_AGENT_ID], done_dict['__all__'], {}
 
     def gen_obs_grid(self, agent_id=DEFAULT_AGENT_ID):
         """
@@ -1254,7 +1264,7 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
         Generate the agent's view (partially observable, low-resolution encoding)
         """
 
-        grid, vis_mask = self.gen_obs_grid(agent_id)
+        grid, vis_mask = self.gen_obs_grid(agent_id=agent_id)
 
         # Encode the partially observable view into a numpy array
         image = grid.encode(vis_mask)
@@ -1290,7 +1300,7 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
 
         return img
 
-    def render(self, mode='human', close=False, highlight=True, tile_size=TILE_PIXELS):
+    def render(self, mode='human', close=False, highlight=True, tile_size=TILE_PIXELS, agent_id=DEFAULT_AGENT_ID):
         """
         Render the whole-grid human view
         """
@@ -1306,36 +1316,35 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
             self.window.show(block=False)
 
         # Compute which cells are visible to the agent
-        _, vis_mask = self.gen_obs_grid()
+        _, vis_mask = self.gen_obs_grid(agent_id)
 
-        for agent_id in self.agent_ids:
-            # Compute the world coordinates of the bottom-left corner
-            # of the agent's view area
-            f_vec = self.dir_vec(agent_id=agent_id)
-            r_vec = self.right_vec(agent_id=agent_id)
-            top_left = self.agents[agent_id].pos + f_vec * \
-                (self.agent_view_size-1) - r_vec * (self.agent_view_size // 2)
+        # Compute the world coordinates of the bottom-left corner
+        # of the agent's view area
+        f_vec = self.dir_vec(agent_id=agent_id)
+        r_vec = self.right_vec(agent_id=agent_id)
+        top_left = self.agents[agent_id].pos + f_vec * \
+            (self.agent_view_size-1) - r_vec * (self.agent_view_size // 2)
 
-            # Mask of which cells to highlight
-            highlight_mask = np.zeros(shape=(self.width, self.height), dtype=np.bool)
+        # Mask of which cells to highlight
+        highlight_mask = np.zeros(shape=(self.width, self.height), dtype=np.bool)
 
-            # For each cell in the visibility mask
-            for vis_j in range(0, self.agent_view_size):
-                for vis_i in range(0, self.agent_view_size):
-                    # If this cell is not visible, don't highlight it
-                    if not vis_mask[vis_i, vis_j]:
-                        continue
+        # For each cell in the visibility mask
+        for vis_j in range(0, self.agent_view_size):
+            for vis_i in range(0, self.agent_view_size):
+                # If this cell is not visible, don't highlight it
+                if not vis_mask[vis_i, vis_j]:
+                    continue
 
-                    # Compute the world coordinates of this cell
-                    abs_i, abs_j = top_left - (f_vec * vis_j) + (r_vec * vis_i)
+                # Compute the world coordinates of this cell
+                abs_i, abs_j = top_left - (f_vec * vis_j) + (r_vec * vis_i)
 
-                    if abs_i < 0 or abs_i >= self.width:
-                        continue
-                    if abs_j < 0 or abs_j >= self.height:
-                        continue
+                if abs_i < 0 or abs_i >= self.width:
+                    continue
+                if abs_j < 0 or abs_j >= self.height:
+                    continue
 
-                    # Mark this cell to be highlighted
-                    highlight_mask[abs_i, abs_j] = True
+                # Mark this cell to be highlighted
+                highlight_mask[abs_i, abs_j] = True
 
         # Render the whole grid
         img = self.grid.render(

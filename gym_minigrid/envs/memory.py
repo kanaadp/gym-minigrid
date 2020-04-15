@@ -62,8 +62,8 @@ class MemoryEnv(MiniGridEnv):
             self.grid.set(hallway_end + 2, j, Wall())
 
         # Fix the player's start position and orientation
-        self.agents[self.DEFAULT_AGENT_ID].pos = (self._rand_int(1, hallway_end + 1), height // 2)
-        self.agents[self.DEFAULT_AGENT_ID].dir = 0
+        self.agents[DEFAULT_AGENT_ID].pos = (self._rand_int(1, hallway_end + 1), height // 2)
+        self.agents[DEFAULT_AGENT_ID].dir = 0
 
         # Place objects
         start_room_obj = self._rand_elem([Key, Ball])
@@ -90,10 +90,10 @@ class MemoryEnv(MiniGridEnv):
             action = MiniGridEnv.Actions.toggle
         obs, reward, done, info = MiniGridEnv.step(self, action)
 
-        if tuple(self.agents[self.DEFAULT_AGENT_ID].pos) == self.success_pos:
+        if tuple(self.agents[DEFAULT_AGENT_ID].pos) == self.success_pos:
             reward = self._reward()
             done = True
-        if tuple(self.agents[self.DEFAULT_AGENT_ID].pos) == self.failure_pos:
+        if tuple(self.agents[DEFAULT_AGENT_ID].pos) == self.failure_pos:
             reward = 0
             done = True
 

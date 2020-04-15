@@ -5,7 +5,7 @@ from functools import reduce
 import numpy as np
 import gym
 from gym import error, spaces, utils
-from .minigrid import OBJECT_TO_IDX, COLOR_TO_IDX, STATE_TO_IDX, MiniGridEnv
+from .minigrid import OBJECT_TO_IDX, COLOR_TO_IDX, STATE_TO_IDX, MiniGridEnv, DEFAULT_AGENT_ID
 
 class ReseedWrapper(gym.core.Wrapper):
     """
@@ -44,7 +44,7 @@ class ActionBonus(gym.core.Wrapper):
         obs, reward, done, info = self.env.step(action)
 
         env = self.unwrapped
-        tup = (tuple(env.agents[MiniGridEnv.DEFAULT_AGENT_ID].pos), env.agents[MiniGridEnv.DEFAULT_AGENT_ID].agent_dir, action)
+        tup = (tuple(env.agents[DEFAULT_AGENT_ID].pos), env.agents[DEFAULT_AGENT_ID].agent_dir, action)
 
         # Get the count for this (s,a) pair
         pre_count = 0
@@ -79,7 +79,7 @@ class StateBonus(gym.core.Wrapper):
         # Tuple based on which we index the counts
         # We use the position after an update
         env = self.unwrapped
-        tup = (tuple(env.agents[MiniGridEnv.DEFAULT_AGENT_ID].pos))
+        tup = (tuple(env.agents[DEFAULT_AGENT_ID].pos))
 
         # Get the count for this key
         pre_count = 0
@@ -236,10 +236,10 @@ class FullyObsWrapper(gym.core.ObservationWrapper):
     def observation(self, obs):
         env = self.unwrapped
         full_grid = env.grid.encode()
-        full_grid[env.agents[MiniGridEnv.DEFAULT_AGENT_ID].pos[0]][env.agents[MiniGridEnv.DEFAULT_AGENT_ID].pos[1]] = np.array([
+        full_grid[env.agents[DEFAULT_AGENT_ID].pos[0]][env.agents[DEFAULT_AGENT_ID].pos[1]] = np.array([
             OBJECT_TO_IDX['agent'],
             COLOR_TO_IDX['red'],
-            env.agents[MiniGridEnv.DEFAULT_AGENT_ID].dir
+            env.agents[DEFAULT_AGENT_ID].dir
         ])
 
         return {
