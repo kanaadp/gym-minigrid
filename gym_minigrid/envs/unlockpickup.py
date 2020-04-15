@@ -1,6 +1,8 @@
+from gym_minigrid.minigrid import *
 from gym_minigrid.minigrid import Ball
 from gym_minigrid.roomgrid import RoomGrid
 from gym_minigrid.register import register
+
 
 class UnlockPickup(RoomGrid):
     """
@@ -36,11 +38,12 @@ class UnlockPickup(RoomGrid):
         obs, reward, done, info = super().step(action)
 
         if action == self.actions.pickup:
-            if self.agents[self.DEFAULT_AGENT_ID].carrying and self.agents[self.DEFAULT_AGENT_ID].carrying == self.obj:
+            if self.agents[DEFAULT_AGENT_ID].carrying and self.agents[DEFAULT_AGENT_ID].carrying == self.obj:
                 reward = self._reward()
                 done = True
 
         return obs, reward, done, info
+
 
 register(
     id='MiniGrid-UnlockPickup-v0',

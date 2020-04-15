@@ -102,7 +102,7 @@ class LockedRoom(MiniGridEnv):
         self.grid.set(*keyPos, Key(lockedRoom.color))
 
         # Randomize the player start position and orientation
-        self.agents[self.DEFAULT_AGENT_ID].pos = self.place_agent(
+        self.agents[DEFAULT_AGENT_ID].pos = self.place_agent(
             top=(lWallIdx, 0),
             size=(rWallIdx-lWallIdx, height)
         )
