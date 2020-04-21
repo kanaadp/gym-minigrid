@@ -686,6 +686,9 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
         # Done completing task
         done = 6
 
+        # don't move
+        no_op = 7
+
     def __init__(
         self,
         grid_size=None,
@@ -1201,6 +1204,10 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
             elif action == self.actions.toggle:
                 if fwd_cell:
                     fwd_cell.toggle(self, fwd_pos, agent_id)
+
+            # no movement or action!
+            elif action == self.actions.no_op:
+                pass
 
             # Done action (not used by default)
             elif action == self.actions.done:
