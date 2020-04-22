@@ -529,18 +529,19 @@ class Grid:
 
         img = np.zeros(shape=(height_px, width_px, 3), dtype=np.uint8)
 
-        agent_info = {tuple(pos): (agent_dir, agent_color) for pos, agent_dir, agent_color in zip(agent_poses, agent_dirs, agent_colors)}
+        agent_info = {tuple(pos): (agent_dir, agent_color)
+                      for pos, agent_dir, agent_color in zip(agent_poses, agent_dirs, agent_colors)}
         # Render the grid
         for j in range(0, self.height):
             for i in range(0, self.width):
                 cell = self.get(i, j)
 
-                agent_here = (i,j) in agent_info
-                    
+                agent_here = (i, j) in agent_info
+
                 tile_img = Grid.render_tile(
                     cell,
-                    agent_dir=agent_info[(i,j)][0] if agent_here else None,
-                    agent_color=tuple(COLORS[agent_info[(i,j)][1]]) if agent_here else None,
+                    agent_dir=agent_info[(i, j)][0] if agent_here else None,
+                    agent_color=tuple(COLORS[agent_info[(i, j)][1]]) if agent_here else None,
                     highlight=highlight_mask[i, j],
                     tile_size=tile_size
                 )
@@ -1180,9 +1181,9 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
             elif action == self.actions.forward:
                 for other_id in self.agent_ids:
                     if other_id != agent_id and np.all(self.agents[other_id].pos == fwd_pos):
-                        #collision between agents!
+                        # collision between agents!
                         print("Collision!")
-                        break        
+                        break
                 else:
                     if fwd_cell == None or fwd_cell.can_overlap():
                         self.agents[agent_id].pos = fwd_pos
