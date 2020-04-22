@@ -459,14 +459,15 @@ class Grid:
         agent_dir=None,
         highlight=False,
         tile_size=TILE_PIXELS,
-        subdivs=3
+        subdivs=3,
+        agent_color=None
     ):
         """
         Render a tile and cache the result
         """
 
         # Hash map lookup key for the cache
-        key = (agent_dir, highlight, tile_size)
+        key = (agent_dir, agent_color, highlight, tile_size)
         key = obj.encode() + key if obj else key
 
         if key in cls.tile_cache:
@@ -491,7 +492,7 @@ class Grid:
 
             # Rotate the agent based on its direction
             tri_fn = rotate_fn(tri_fn, cx=0.5, cy=0.5, theta=0.5*math.pi*agent_dir)
-            fill_coords(img, tri_fn, (255, 0, 0))
+            fill_coords(img, tri_fn, agent_color)
 
         # Highlight the cell if needed
         if highlight:
@@ -510,6 +511,7 @@ class Grid:
         tile_size,
         agent_poses=None,
         agent_dirs=None,
+        agent_colors=None,
         highlight_mask=None
     ):
         """
@@ -527,18 +529,18 @@ class Grid:
 
         img = np.zeros(shape=(height_px, width_px, 3), dtype=np.uint8)
 
+        agent_info = {tuple(pos): (agent_dir, agent_color) for pos, agent_dir, agent_color in zip(agent_poses, agent_dirs, agent_colors)}
         # Render the grid
         for j in range(0, self.height):
             for i in range(0, self.width):
                 cell = self.get(i, j)
 
-                for agent_id in range(len(agent_poses)):
-                    agent_here = np.array_equal(agent_poses[agent_id], (i, j))
-                    if agent_here:
-                        break
+                agent_here = (i,j) in agent_info
+                    
                 tile_img = Grid.render_tile(
                     cell,
-                    agent_dir=agent_dirs[agent_id] if agent_here else None,
+                    agent_dir=agent_info[(i,j)][0] if agent_here else None,
+                    agent_color=tuple(COLORS[agent_info[(i,j)][1]]) if agent_here else None,
                     highlight=highlight_mask[i, j],
                     tile_size=tile_size
                 )
@@ -1176,14 +1178,20 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
 
             # Move forward
             elif action == self.actions.forward:
-                if fwd_cell == None or fwd_cell.can_overlap():
-                    self.agents[agent_id].pos = fwd_pos
-                if fwd_cell != None and fwd_cell.type == 'goal':
-                    if fwd_cell.agent_id == agent_id:
+                for other_id in self.agent_ids:
+                    if other_id != agent_id and np.all(self.agents[other_id].pos == fwd_pos):
+                        #collision between agents!
+                        print("Collision!")
+                        break        
+                else:
+                    if fwd_cell == None or fwd_cell.can_overlap():
+                        self.agents[agent_id].pos = fwd_pos
+                    if fwd_cell != None and fwd_cell.type == 'goal':
+                        if fwd_cell.agent_id == agent_id:
+                            self.agents[agent_id].done = True
+                            reward_dict[agent_id] = self._reward(agent_id=agent_id)
+                    if fwd_cell != None and fwd_cell.type == 'lava':
                         self.agents[agent_id].done = True
-                        reward_dict[agent_id] = self._reward(agent_id=agent_id)
-                if fwd_cell != None and fwd_cell.type == 'lava':
-                    self.agents[agent_id].done = True
 
             # Pick up an object
             elif action == self.actions.pickup:
