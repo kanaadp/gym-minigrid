@@ -7,6 +7,7 @@ import gym
 from gym import error, spaces, utils
 from .minigrid import OBJECT_TO_IDX, COLOR_TO_IDX, STATE_TO_IDX, MiniGridEnv, DEFAULT_AGENT_ID
 
+
 class ReseedWrapper(gym.core.Wrapper):
     """
     Wrapper to always regenerate an environment with the same set of seeds.
@@ -28,6 +29,7 @@ class ReseedWrapper(gym.core.Wrapper):
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
         return obs, reward, done, info
+
 
 class ActionBonus(gym.core.Wrapper):
     """
@@ -63,6 +65,7 @@ class ActionBonus(gym.core.Wrapper):
     def reset(self, **kwargs):
         return self.env.reset(**kwargs)
 
+
 class StateBonus(gym.core.Wrapper):
     """
     Adds an exploration bonus based on which positions
@@ -97,6 +100,7 @@ class StateBonus(gym.core.Wrapper):
 
     def reset(self, **kwargs):
         return self.env.reset(**kwargs)
+
 
 class ImgObsWrapper(gym.core.ObservationWrapper):
     """
@@ -156,6 +160,7 @@ class OneHotPartialObsWrapper(gym.core.ObservationWrapper):
             'mission': obs['mission'],
             'image': out
         }
+
 
 class RGBImgObsWrapper(gym.core.ObservationWrapper):
     """
@@ -222,6 +227,7 @@ class RGBImgPartialObsWrapper(gym.core.ObservationWrapper):
             'mission': obs['mission'],
             'image': rgb_img_partial
         }
+
 
 class FullyObsWrapper(gym.core.ObservationWrapper):
     """
@@ -341,6 +347,7 @@ class FlatObsWrapper(gym.core.ObservationWrapper):
         obs = np.concatenate((image.flatten(), self.cachedArray.flatten()))
 
         return obs
+
 
 class ViewSizeWrapper(gym.core.Wrapper):
     """

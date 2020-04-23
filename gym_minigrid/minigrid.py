@@ -181,7 +181,7 @@ class Goal(WorldObj):
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
-        fill_coords(img, point_in_rect(0.1, 0.9, 0.1, 0.9), (0,0,0))
+        fill_coords(img, point_in_rect(0.1, 0.9, 0.1, 0.9), (0, 0, 0))
 
 
 class Floor(WorldObj):
@@ -207,6 +207,7 @@ class Floor(WorldObj):
             (1,           1)
         ])
 
+
 class Counter(WorldObj):
     """
     Counter. Can't walk over, but can place items on
@@ -217,7 +218,7 @@ class Counter(WorldObj):
         self.obj = obj
         if obj is not None:
             self.color = self.obj.color
-        
+
     def can_overlap(self):
         return False
 
@@ -242,14 +243,15 @@ class Counter(WorldObj):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS['tan'])
         if self.has_obj():
             self.obj.render(img)
-    
+
     def encode(self):
-        
+
         encoding = super().encode()
         if self.has_obj():
             return (OBJECT_TO_IDX['{}_counter'.format(self.obj.type)], COLOR_TO_IDX[self.color], 0)
         else:
             return (OBJECT_TO_IDX['counter'], COLOR_TO_IDX[self.color], 0)
+
 
 class Lava(WorldObj):
     def __init__(self):
