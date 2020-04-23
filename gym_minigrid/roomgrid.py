@@ -7,7 +7,7 @@ def reject_next_to(env, pos):
     the agent's starting point
     """
 
-    sx, sy = env.agents[env.DEFAULT_AGENT_ID].pos
+    sx, sy = env.agents[DEFAULT_AGENT_ID].pos
     x, y = pos
     d = abs(sx - x) + abs(sy - y)
     return d < 2
@@ -284,7 +284,7 @@ class RoomGrid(MiniGridEnv):
         room.doors[wall_idx] = True
         neighbor.doors[(wall_idx+2) % 4] = True
 
-    def place_agent(self, i=None, j=None, rand_dir=True):
+    def place_agent(self, i=None, j=None, rand_dir=True, agent_id=DEFAULT_AGENT_ID):
         """
         Place the agent in a room
         """
@@ -303,7 +303,7 @@ class RoomGrid(MiniGridEnv):
             if front_cell is None or front_cell.type is 'wall':
                 break
 
-        return self.agents[DEFAULT_AGENT_ID].pos
+        return self.agents[agent_id].pos
 
     def connect_all(self, door_colors=COLOR_NAMES, max_itrs=5000):
         """

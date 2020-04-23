@@ -108,7 +108,12 @@ class ImgObsWrapper(gym.core.ObservationWrapper):
         self.observation_space = env.observation_space.spaces['image']
 
     def observation(self, obs):
-        return obs['image']
+        env = self.unwrapped
+        if env.multiagent:
+            return {id: obs[id]['image'] for id in obs}
+        else:
+            return obs['image']
+
 
 class OneHotPartialObsWrapper(gym.core.ObservationWrapper):
     """
@@ -236,16 +241,55 @@ class FullyObsWrapper(gym.core.ObservationWrapper):
     def observation(self, obs):
         env = self.unwrapped
         full_grid = env.grid.encode()
-        full_grid[env.agents[DEFAULT_AGENT_ID].pos[0]][env.agents[DEFAULT_AGENT_ID].pos[1]] = np.array([
-            OBJECT_TO_IDX['agent'],
-            COLOR_TO_IDX['red'],
-            env.agents[DEFAULT_AGENT_ID].dir
-        ])
+        if env.multiagent:
+            for i, agent_id in enumerate(env.agent_ids):
+                full_grid[env.agents[agent_id].pos[0]][env.agents[agent_id].pos[1]] = np.array([
+                    OBJECT_TO_IDX['agent'],
+                    i,
+                    env.agents[agent_id].dir
+                ]
+                )
+            new_obs = {}
+            for agent_id in obs:
+                new_obs[agent_id] = {
+                    'mission': obs[agent_id]['mission'],
+                    'image': full_grid
+                }
+            return new_obs
+        else:
+            full_grid[env.agents[DEFAULT_AGENT_ID].pos[0]][env.agents[DEFAULT_AGENT_ID].pos[1]] = np.array([
+                OBJECT_TO_IDX['agent'],
+                COLOR_TO_IDX['red'],
+                env.agents[DEFAULT_AGENT_ID].dir
+            ]
+            )
+            return {
+                'mission': obs['mission'],
+                'image': full_grid
+            }
 
-        return {
-            'mission': obs['mission'],
-            'image': full_grid
-        }
+
+class FlattenWrapper(gym.core.ObservationWrapper):
+    """
+    Flatten Observation
+    """
+
+    def __init__(self, env, maxStrLen=96):
+        super().__init__(env)
+        self.observation_space = spaces.Box(
+            low=0,
+            high=255,
+            shape=(reduce(operator.mul, env.observation_space.shape, 1), ),
+            dtype='uint8'
+        )
+
+    def observation(self, obs):
+        env = self.unwrapped
+        if env.multiagent:
+            return {agent_id: obs[agent_id].flatten() for agent_id in obs}
+        else:
+            return obs.flatten()
+
 
 class FlatObsWrapper(gym.core.ObservationWrapper):
     """

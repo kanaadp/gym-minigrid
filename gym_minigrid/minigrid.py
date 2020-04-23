@@ -18,7 +18,8 @@ COLORS = {
     'blue': np.array([0, 0, 255]),
     'purple': np.array([112, 39, 195]),
     'yellow': np.array([255, 255, 0]),
-    'grey': np.array([100, 100, 100])
+    'grey': np.array([100, 100, 100]),
+    'tan': np.array([191, 127, 63])
 }
 
 COLOR_NAMES = sorted(list(COLORS.keys()))
@@ -30,7 +31,8 @@ COLOR_TO_IDX = {
     'blue': 2,
     'purple': 3,
     'yellow': 4,
-    'grey': 5
+    'grey': 5,
+    'tan': 6
 }
 
 IDX_TO_COLOR = dict(zip(COLOR_TO_IDX.values(), COLOR_TO_IDX.keys()))
@@ -48,6 +50,10 @@ OBJECT_TO_IDX = {
     'goal': 8,
     'lava': 9,
     'agent': 10,
+    'counter': 11,
+    'key_counter': 12,
+    'ball_counter': 13,
+    'box_counter': 14
 }
 
 IDX_TO_OBJECT = dict(zip(OBJECT_TO_IDX.values(), OBJECT_TO_IDX.keys()))
@@ -144,6 +150,17 @@ class WorldObj:
             v = Goal()
         elif obj_type == 'lava':
             v = Lava()
+        elif obj_type == 'counter':
+            v = Counter()
+        elif obj_type == 'key_counter':
+            obj = Key(color=color)
+            v = Counter(obj)
+        elif obj_type == 'ball_counter':
+            obj = Ball(color=color)
+            v = Counter(obj)
+        elif obj_type == 'box_counter':
+            obj = Box(color=color)
+            v = Counter(obj)
         else:
             assert False, "unknown object type in decode '%s'" % obj_type
 
@@ -155,8 +172,8 @@ class WorldObj:
 
 
 class Goal(WorldObj):
-    def __init__(self, agent_id=DEFAULT_AGENT_ID):
-        super().__init__('goal', 'green')
+    def __init__(self, agent_id=DEFAULT_AGENT_ID, color='green'):
+        super().__init__('goal', color)
         self.agent_id = agent_id
 
     def can_overlap(self):
@@ -164,6 +181,7 @@ class Goal(WorldObj):
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
+        fill_coords(img, point_in_rect(0.1, 0.9, 0.1, 0.9), (0,0,0))
 
 
 class Floor(WorldObj):
@@ -189,6 +207,49 @@ class Floor(WorldObj):
             (1,           1)
         ])
 
+class Counter(WorldObj):
+    """
+    Counter. Can't walk over, but can place items on
+    """
+
+    def __init__(self, obj=None, color='tan'):
+        super().__init__('counter', color)
+        self.obj = obj
+        if obj is not None:
+            self.color = self.obj.color
+        
+    def can_overlap(self):
+        return False
+
+    def can_contain(self):
+        """Counter can contain other obj!?"""
+        return True
+
+    def has_obj(self):
+        return self.obj is not None
+
+    def place(self, obj):
+        self.obj = obj
+        self.color = self.obj.color
+
+    def retrieve(self):
+        obj = self.obj
+        self.obj = None
+        self.color = 'tan'
+        return obj
+
+    def render(self, img):
+        fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS['tan'])
+        if self.has_obj():
+            self.obj.render(img)
+    
+    def encode(self):
+        
+        encoding = super().encode()
+        if self.has_obj():
+            return (OBJECT_TO_IDX['{}_counter'.format(self.obj.type)], COLOR_TO_IDX[self.color], 0)
+        else:
+            return (OBJECT_TO_IDX['counter'], COLOR_TO_IDX[self.color], 0)
 
 class Lava(WorldObj):
     def __init__(self):
@@ -812,6 +873,10 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
             'box': 'B',
             'goal': 'G',
             'lava': 'V',
+            'counter': 'C',
+            'key_counter': 'k',
+            'ball_counter': 'a',
+            'box_counter': 'b'
         }
 
         # Short string for opened door
@@ -1196,18 +1261,27 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
 
             # Pick up an object
             elif action == self.actions.pickup:
-                if fwd_cell and fwd_cell.can_pickup():
-                    if self.agents[agent_id].carrying is None:
-                        self.agents[agent_id].carrying = fwd_cell
-                        self.agents[agent_id].carrying.cur_pos = np.array([-1, -1])
-                        self.grid.set(*fwd_pos, None)
+                if self.agents[agent_id].carrying is None:
+                    if fwd_cell:
+                        if 'counter' in fwd_cell.type and fwd_cell.has_obj():
+                            self.agents[agent_id].carrying = fwd_cell.retrieve()
+                            self.agents[agent_id].carrying.cur_pos = np.array([-1, -1])
+                        elif fwd_cell.can_pickup():
+                            self.agents[agent_id].carrying = fwd_cell
+                            self.agents[agent_id].carrying.cur_pos = np.array([-1, -1])
+                            self.grid.set(*fwd_pos, None)
 
             # Drop an object
             elif action == self.actions.drop:
-                if not fwd_cell and self.agents[agent_id].carrying:
-                    self.grid.set(*fwd_pos, self.agents[agent_id].carrying)
-                    self.agents[agent_id].carrying.cur_pos = fwd_pos
-                    self.agents[agent_id].carrying = None
+                if self.agents[agent_id].carrying:
+                    if fwd_cell and 'counter' in fwd_cell.type and not fwd_cell.has_obj():
+                        fwd_cell.place(self.agents[agent_id].carrying)
+                        self.agents[agent_id].carrying.cur_pos = fwd_pos
+                        self.agents[agent_id].carrying = None
+                    if not fwd_cell:
+                        self.grid.set(*fwd_pos, self.agents[agent_id].carrying)
+                        self.agents[agent_id].carrying.cur_pos = fwd_pos
+                        self.agents[agent_id].carrying = None
 
             # Toggle/activate an object
             elif action == self.actions.toggle:
@@ -1234,7 +1308,7 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
             all_done = False
 
         obs_dict = {}
-        for agent_id in self.agent_ids:
+        for agent_id in agent_actions.keys():
             obs_dict[agent_id] = self.gen_obs(agent_id)
 
         done_dict['__all__'] = all_done
@@ -1309,9 +1383,10 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
         # Render the whole grid
         img = grid.render(
             tile_size,
-            agent_poses=(self.agent_view_size // 2, self.agent_view_size - 1),
-            agent_dirs=3,
-            highlight_mask=vis_mask
+            agent_poses=[(self.agent_view_size // 2, self.agent_view_size - 1)],
+            agent_dirs=[3],
+            highlight_mask=vis_mask,
+            agent_colors=['red']
         )
 
         return img
@@ -1367,6 +1442,7 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
             tile_size,
             [self.agents[agent_id].pos for agent_id in self.agent_ids],
             [self.agents[agent_id].dir for agent_id in self.agent_ids],
+            [IDX_TO_COLOR[i] for i in range(len(self.agent_ids))],
             highlight_mask=highlight_mask if highlight else None
         )
 
