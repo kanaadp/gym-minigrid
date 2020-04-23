@@ -1,3 +1,4 @@
+from .minigrid import Goal
 import math
 import operator
 from functools import reduce
@@ -379,28 +380,70 @@ class ViewSizeWrapper(gym.core.Wrapper):
 
     def step(self, action):
         return self.env.step(action)
-        
-from .minigrid import Goal
+
+
 class DirectionObsWrapper(gym.core.ObservationWrapper):
     """
     Provides the slope/angular direction to the goal with the observations as modeled by (y2 - y2 )/( x2 - x1)
     type = {slope , angle}
     """
-    def __init__(self, env,type='slope'):
+
+    def __init__(self, env, type='slope'):
         super().__init__(env)
         self.goal_position = None
         self.type = type
-    
+
     def reset(self):
         obs = self.env.reset()
-        if not self.goal_position: 
-            self.goal_position = [x for x,y in enumerate(self.grid.grid) if isinstance(y,(Goal) ) ]
-            if len(self.goal_position) >= 1: # in case there are multiple goals , needs to be handled for other env types
-                self.goal_position = (int(self.goal_position[0]/self.height) , self.goal_position[0]%self.width)
+        if not self.goal_position:
+            self.goal_position = [x for x, y in enumerate(self.grid.grid) if isinstance(y, (Goal))]
+            if len(self.goal_position) >= 1:  # in case there are multiple goals , needs to be handled for other env types
+                self.goal_position = (int(self.goal_position[0]/self.height), self.goal_position[0] % self.width)
         return obs
-        
+
     def observation(self, obs):
-        slope = np.divide( self.goal_position[1] - self.agent_pos[1] ,  self.goal_position[0] - self.agent_pos[0]) 
-        obs['goal_direction'] = np.arctan( slope ) if self.type == 'angle' else slope
+        slope = np.divide(self.goal_position[1] - self.agent_pos[1],  self.goal_position[0] - self.agent_pos[0])
+        obs['goal_direction'] = np.arctan(slope) if self.type == 'angle' else slope
         return obs
-        
+
+
+class SharedRewardWrapper(gym.core.RewardWrapper):
+    """
+    Each agent receives a sum of active agent rewards
+    """
+
+    def reward(self, reward, dense_reward=0.0, anneal_coef=None):
+        if type(reward) is not dict:
+            return reward + dense_reward
+        else:
+            total_reward = sum(reward.values())
+            new_reward = {}
+            for agent_id in reward.keys():
+                if type(dense_reward) is dict:
+                    agent_additional_rew = dense_reward[agent_id]
+                else:
+                    agent_additional_rew = dense_reward
+                new_reward[agent_id] = total_reward + anneal_coef * agent_additional_rew
+            return new_reward
+
+
+class RewardShapingAnnealingWrapper(SharedRewardWrapper):
+    """
+    Each agent receives a sum of active agent rewards
+    """
+
+    def __init__(self, env, anneal_horizon, dense_reward_fn):
+        super().__init__(env)
+        self.anneal_horizon = anneal_horizon
+        self.dense_reward_fn = dense_reward_fn
+        self.iteration_number = 0
+
+    def update_curriculum(self, iteration_number):
+        self.iteration_number = iteration_number
+
+    def step(self, action):
+        observation, reward, done, info = self.env.step(action)
+        dense_reward = self.dense_reward_fn(info)
+        anneal_coef = max(self.anneal_horizon - self.iteration_number, 0) / self.anneal_horizon
+
+        return observation, self.reward(reward, dense_reward, anneal_coef), done, info

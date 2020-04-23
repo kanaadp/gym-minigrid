@@ -1222,10 +1222,13 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
             assert num_active == len(agent_actions), "Incorrect number of agent_actions"
 
         reward_dict = {}
+        info_dict = {}
         for agent_id, action in agent_actions.items():
-
             assert not self.agents[agent_id].done, "Action for done agent!"
+
             reward_dict[agent_id] = 0
+            info_dict[agent_id] = {}
+            action_info = (None, None)
             self.agents[agent_id].step_count += 1
 
             # Get the position in front of the agent
@@ -1239,27 +1242,35 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
                 self.agents[agent_id].dir -= 1
                 if self.agents[agent_id].dir < 0:
                     self.agents[agent_id].dir += 4
+                action_info = ("left_turn", None)
 
             # Rotate right
             elif action == self.actions.right:
                 self.agents[agent_id].dir = (self.agents[agent_id].dir + 1) % 4
+                action_info = ("right_turn", None)
 
             # Move forward
             elif action == self.actions.forward:
                 for other_id in self.agent_ids:
                     if other_id != agent_id and np.all(self.agents[other_id].pos == fwd_pos):
                         # collision between agents!
+                        action_info = ("collision", other_id)
                         print("Collision!")
                         break
                 else:
                     if fwd_cell == None or fwd_cell.can_overlap():
                         self.agents[agent_id].pos = fwd_pos
+                        action_info = ("forward", None)
                     if fwd_cell != None and fwd_cell.type == 'goal':
                         if fwd_cell.agent_id == agent_id:
                             self.agents[agent_id].done = True
                             reward_dict[agent_id] = self._reward(agent_id=agent_id)
+                            action_info = ("own_goal", None)
+                        else:
+                            action_info = ("other_goal", fwd_cell.agent_id)
                     if fwd_cell != None and fwd_cell.type == 'lava':
                         self.agents[agent_id].done = True
+                        action_info = ("lava_death", None)
 
             # Pick up an object
             elif action == self.actions.pickup:
@@ -1268,19 +1279,24 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
                         if 'counter' in fwd_cell.type and fwd_cell.has_obj():
                             self.agents[agent_id].carrying = fwd_cell.retrieve()
                             self.agents[agent_id].carrying.cur_pos = np.array([-1, -1])
+                            action_info = ("pickup_counter", self.agents[agent_id].carrying)
                         elif fwd_cell.can_pickup():
                             self.agents[agent_id].carrying = fwd_cell
                             self.agents[agent_id].carrying.cur_pos = np.array([-1, -1])
                             self.grid.set(*fwd_pos, None)
+                            action_info = ("pickup", self.agents[agent_id].carrying)
 
             # Drop an object
             elif action == self.actions.drop:
                 if self.agents[agent_id].carrying:
                     if fwd_cell and 'counter' in fwd_cell.type and not fwd_cell.has_obj():
+                        action_info = ("drop_counter", self.agents[agent_id].carrying)
                         fwd_cell.place(self.agents[agent_id].carrying)
                         self.agents[agent_id].carrying.cur_pos = fwd_pos
                         self.agents[agent_id].carrying = None
+
                     if not fwd_cell:
+                        action_info = ("drop", self.agents[agent_id].carrying)
                         self.grid.set(*fwd_pos, self.agents[agent_id].carrying)
                         self.agents[agent_id].carrying.cur_pos = fwd_pos
                         self.agents[agent_id].carrying = None
@@ -1288,10 +1304,12 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
             # Toggle/activate an object
             elif action == self.actions.toggle:
                 if fwd_cell:
-                    fwd_cell.toggle(self, fwd_pos, agent_id)
+                    successful_toggle = fwd_cell.toggle(self, fwd_pos, agent_id)
+                    action_info = ('door', successful_toggle)
 
             # no movement or action!
             elif action == self.actions.no_op:
+                action_info = ('no_op', None)
                 pass
 
             # Done action (not used by default)
@@ -1300,6 +1318,8 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
 
             else:
                 assert False, "unknown action"
+
+            info_dict[agent_id]['action_info'] = action_info
 
         done_dict = {agent_id: self.agents[agent_id].done for agent_id in self.agent_ids}
         if np.all(list(done_dict.values())):
@@ -1315,9 +1335,9 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
 
         done_dict['__all__'] = all_done
         if self.multiagent:
-            return obs_dict, reward_dict, done_dict, {}
+            return obs_dict, reward_dict, done_dict, info_dict
         else:
-            return obs_dict[DEFAULT_AGENT_ID], reward_dict[DEFAULT_AGENT_ID], done_dict['__all__'], {}
+            return obs_dict[DEFAULT_AGENT_ID], reward_dict[DEFAULT_AGENT_ID], done_dict['__all__'], info_dict
 
     def gen_obs_grid(self, agent_id=DEFAULT_AGENT_ID):
         """
