@@ -68,7 +68,6 @@ class TwoPlayerEnvController(Thread):
 
     def step(self, action):
         assert type(action) is dict
-        print(action['agent_1'], action['agent_2'])
         obs, reward_dict, self.done, info = env.step(action)
 
         if self.done['__all__']:
@@ -113,11 +112,11 @@ class TwoPlayerEnvController(Thread):
                 key_b = env.actions.right
             elif event.key == 'w':
                 key_b = env.actions.forward
-            elif event.key == 's':
+            elif event.key == 'x':
                 key_b = env.actions.toggle
-            elif event.key == 'q':
-                key_b = env.actions.pickup
             elif event.key == 'e':
+                key_b = env.actions.pickup
+            elif event.key == 'c':
                 key_b = env.actions.drop
             else:
                 key_b = None

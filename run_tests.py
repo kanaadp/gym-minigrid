@@ -45,8 +45,8 @@ for env_idx, env_name in enumerate(env_list):
         obs, reward, done, info = env.step(action)
 
         # Validate the agent position
-        assert env.agents[env.DEFAULT_AGENT_ID].pos[0] < env.width
-        assert env.agents[env.DEFAULT_AGENT_ID].pos[1] < env.height
+        assert env.agents[DEFAULT_AGENT_ID].pos[0] < env.width
+        assert env.agents[DEFAULT_AGENT_ID].pos[1] < env.height
 
         # Test observation encode/decode roundtrip
         img = obs['image']
