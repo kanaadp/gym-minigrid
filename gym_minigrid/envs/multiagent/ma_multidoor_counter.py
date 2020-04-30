@@ -95,15 +95,18 @@ class MultidoorCounter6x11Random(MultidoorCounter):
 
 register(
     id='MiniGrid-MA-MultidoorCounter-5x11-v0',
-    entry_point='gym_minigrid.envs:MultidoorCounter5x11'
+    entry_point='gym_minigrid.envs:MultidoorCounter5x11',
+    reward_threshold=None
 )
 
 register(
     id='MiniGrid-MA-MultidoorCounter-6x11-v0',
-    entry_point='gym_minigrid.envs:MultidoorCounter6x11'
+    entry_point='gym_minigrid.envs:MultidoorCounter6x11',
+    reward_threshold=None
 )
 
 register(
     id='MiniGrid-MA-MultidoorCounter-Random-6x11-v0',
-    entry_point='gym_minigrid.envs:MultidoorCounter6x11Random'
+    entry_point='gym_minigrid.envs:MultidoorCounter6x11Random',
+    reward_threshold=None
 )
