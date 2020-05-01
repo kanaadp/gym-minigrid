@@ -14,7 +14,7 @@ def register(
     gym_register(
         id=id,
         entry_point=entry_point,
-        reward_threshold=reward_threshold
+        # reward_threshold=reward_threshold
     )
 
     # Add the environment to the set
