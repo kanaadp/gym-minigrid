@@ -23,3 +23,4 @@ from gym_minigrid.envs.multiagent.ma_empty import *
 from gym_minigrid.envs.multiagent.ma_multidoor_counter import *
 from gym_minigrid.envs.multiagent.ma_shared_space import *
 from gym_minigrid.envs.multiagent.ma_circ import *
+from gym_minigrid.envs.multiagent.ma_countercirc import *
