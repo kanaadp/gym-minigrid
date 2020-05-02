@@ -1255,7 +1255,7 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
                     if other_id != agent_id and np.all(self.agents[other_id].pos == fwd_pos):
                         # collision between agents!
                         action_info = ("collision", other_id)
-                        print("Collision!")
+                        reward_dict[agent_id] = -0.1
                         break
                 else:
                     if fwd_cell == None or fwd_cell.can_overlap():
