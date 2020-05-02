@@ -276,6 +276,53 @@ class FullyObsWrapper(gym.core.ObservationWrapper):
             }
 
 
+class WallMaskWrapper(gym.core.ObservationWrapper):
+    """
+    Mask out walls and return a flattened observation. Note, this 
+    shouldn't be used with convolutional networks
+    """
+
+    def __init__(self, env):
+        super().__init__(env)
+
+        self.num_not_walls = 0
+        for i in range(self.width):
+            for j in range(self.height):
+                if env.grid.get(i, j) is None or env.grid.get(i, j).type != 'wall':
+                    self.num_not_walls += 1
+
+        self.wall_mask = None
+
+        self.observation_space = spaces.Box(
+            low=0,
+            high=255,
+            shape=(self.num_not_walls, 3),  # number of cells
+            dtype='uint8'
+        )
+
+    def make_wall_mask(self, image):
+        self.wall_mask = image[:, 0] != OBJECT_TO_IDX['wall']
+
+    def observation(self, obs):
+        env = self.unwrapped
+        if env.multiagent:
+            new_obs = {}
+            for agent_id in env.agent_ids:
+                image = obs[agent_id]
+                image = np.reshape(image, (-1, 3))
+                if self.wall_mask is None:
+                    self.make_wall_mask(image)
+                without_walls = image[self.wall_mask]
+                new_obs[agent_id] = without_walls
+            return new_obs
+        else:
+            obs = np.reshape(obs, (-1, 3))
+            if self.wall_mask is None:
+                self.make_wall_mask(obs)
+            without_walls = obs[self.wall_mask]
+            return without_walls
+
+
 class FlattenWrapper(gym.core.ObservationWrapper):
     """
     Flatten Observation
