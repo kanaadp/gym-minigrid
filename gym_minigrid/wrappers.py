@@ -459,7 +459,7 @@ class SharedRewardWrapper(gym.core.RewardWrapper):
     Each agent receives a sum of active agent rewards
     """
 
-    def reward(self, reward, dense_reward=0.0, anneal_coef=None):
+    def reward(self, reward, dense_reward=0.0, anneal_coef=0.0):
         if type(reward) is not dict:
             return reward + dense_reward
         else:
