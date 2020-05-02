@@ -46,6 +46,10 @@ class MACounterCirc(MiniGridEnv):
         self.box_landed = False
         self.ball_landed = False
 
+        self.agent_1_pickup = False
+        self.agent_2_pickup = False
+
+
     def step(self, agent_actions):
         obs_dict, reward_dict, done_dict, info_dict = super().step(agent_actions)
 
@@ -57,10 +61,13 @@ class MACounterCirc(MiniGridEnv):
         if self.grid.get(2, 4).has_obj() and self.grid.get(2, 4).obj.type == 'ball':
             self.grid.get(2, 4).retrieve()
             self.ball_landed = True
-            if info_dict['agent_1']['action_info'] == ('drop_counter', 'ball'):
+            if info_dict['agent_1']['action_info'][0] == 'drop_counter' and info_dict['agent_1']['action_info'][1].type == 'ball':
                 reward_dict['agent_1'] += 1
-            elif info_dict['agent_2']['action_info'] == ('drop_counter', 'ball'):
+            elif info_dict['agent_2']['action_info'][0] == 'drop_counter' and info_dict['agent_2']['action_info'][1].type == 'ball':
                 reward_dict['agent_2'] += 1
+
+            self.agent_1_pickup = self.agent_1_pickup and self.agent_1_pickup != 'ball'
+            self.agent_2_pickup = self.agent_2_pickup and self.agent_2_pickup != 'ball'
 
         # movin boxes:
         if not self.grid.get(3, 4).has_obj() and self.box_landed:
@@ -69,10 +76,13 @@ class MACounterCirc(MiniGridEnv):
         if self.grid.get(3, 0).has_obj() and self.grid.get(3, 0).obj.type == 'box':
             self.grid.get(3, 0).retrieve()
             self.box_landed = True
-            if info_dict['agent_1']['action_info'] == ('drop_counter', 'box'):
+            if info_dict['agent_1']['action_info'][0] == 'drop_counter' and info_dict['agent_1']['action_info'][1].type == 'box':
                 reward_dict['agent_1'] += 1
-            elif info_dict['agent_2']['action_info'] == ('drop_counter', 'box'):
+            elif info_dict['agent_2']['action_info'][0] == 'drop_counter' and info_dict['agent_2']['action_info'][1].type == 'box':
                 reward_dict['agent_2'] += 1
+
+            self.agent_1_pickup = self.agent_1_pickup and self.agent_1_pickup != 'box'
+            self.agent_2_pickup = self.agent_2_pickup and self.agent_2_pickup != 'box'
 
         return obs_dict, reward_dict, done_dict, info_dict
 
@@ -81,16 +91,19 @@ class MACounterCirc(MiniGridEnv):
         dense_rewards = {}
         if 'agent_1' in info_dict:
             action_info = info_dict['agent_1']['action_info']
-            if action_info[0] == 'pickup_counter':
+            if action_info[0] == 'pickup_counter' and not self.agent_1_pickup:
                 dense_rewards['agent_1'] = 1
+                self.agent_1_pickup = action_info[1].type
+                
             else:
                 dense_rewards['agent_1'] = 0
             dense_rewards['agent_1'] *= self.scaling
 
         if 'agent_2' in info_dict:
             action_info = info_dict['agent_2']['action_info']
-            if action_info[0] == 'pickup_counter':
+            if action_info[0] == 'pickup_counter' and not self.agent_2_pickup:
                 dense_rewards['agent_2'] = 1
+                self.agent_2_pickup = action_info[1].type
             else:
                 dense_rewards['agent_2'] = 0
             dense_rewards['agent_2'] *= self.scaling

@@ -8,6 +8,7 @@ import gym
 import gym_minigrid
 from gym_minigrid.wrappers import *
 from gym_minigrid.window import Window
+from run.run_minigrid_env import make_create_env
 import random
 
 
@@ -69,6 +70,9 @@ class TwoPlayerEnvController(Thread):
     def step(self, action):
         assert type(action) is dict
         obs, reward_dict, self.done, info = env.step(action)
+
+        for agent in reward_dict:
+            print("Agent {}: {}", agent, reward_dict[agent])
 
         if self.done['__all__']:
             print('done!')
@@ -155,8 +159,10 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    env = gym.make(args.env)
+    config = {'render' : False, 'anneal_horizon': 1000}
 
+    create_env = make_create_env(args.env)
+    env = create_env(config)
     window = Window('gym_minigrid - ' + args.env)
 
     controller = TwoPlayerEnvController(dx=0.1, window=window)
