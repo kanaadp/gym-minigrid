@@ -8,7 +8,7 @@ class MACircEnv(MiniGridEnv):
 
     def __init__(
         self,
-        size=4,
+        size=8,
         num_agents=2,
         max_steps=40
     ):
