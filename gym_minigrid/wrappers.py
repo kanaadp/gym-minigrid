@@ -432,10 +432,9 @@ class RewardShapingAnnealingWrapper(SharedRewardWrapper):
     Each agent receives a sum of active agent rewards
     """
 
-    def __init__(self, env, anneal_horizon, dense_reward_fn):
+    def __init__(self, env, anneal_horizon):
         super().__init__(env)
         self.anneal_horizon = anneal_horizon
-        self.dense_reward_fn = dense_reward_fn
         self.iteration_number = 0
 
     def update_curriculum(self, iteration_number):

@@ -8,8 +8,6 @@ class SharedSpace(MiniGridEnv, MultiAgentEnv):
     Environment with a door and key, sparse reward
     """
 
-    scaling = 1e-3
-
     def __init__(self, height=4, width=8, max_steps=30, randomize_key_pos=False):
         self.randomize_key_pos = randomize_key_pos
         super().__init__(
@@ -20,6 +18,7 @@ class SharedSpace(MiniGridEnv, MultiAgentEnv):
             multiagent=True,
             agent_ids=['agent_1', 'agent_2']
         )
+        self.scaling = 1e-3
 
     def _gen_grid(self, width, height):
         # Create an empty grid
@@ -61,8 +60,7 @@ class SharedSpace(MiniGridEnv, MultiAgentEnv):
 
         self.mission = "use the keys to open the doors and then get to the goal"
 
-    @classmethod
-    def calc_dense_reward(cls, info_dict):
+    def dense_reward_fn(self, info_dict):
         dense_rewards = {}
         if 'agent_1' in info_dict:
             action_info = info_dict['agent_1']['action_info']
@@ -74,17 +72,19 @@ class SharedSpace(MiniGridEnv, MultiAgentEnv):
                 dense_rewards['agent_1'] = 1
             else:
                 dense_rewards['agent_1'] = 0
-            dense_rewards['agent_1'] *= cls.scaling
+            dense_rewards['agent_1'] *= self.scaling
 
         if 'agent_2' in info_dict:
             action_info = info_dict['agent_2']['action_info']
-            if action_info[0] == 'pickup' and action_info[1].type == 'key':
+            if action_info[0] == 'pickup_counter' and action_info[1].type == 'key':
                 dense_rewards['agent_2'] = 1
-            elif action_info[0] == 'drop_counter' and action_info[1].type == 'key':
+            elif action_info[0] == 'door' and action_info[1]:
+                dense_rewards['agent_2'] = 5
+            elif action_info[0] == 'door':
                 dense_rewards['agent_2'] = 1
             else:
                 dense_rewards['agent_2'] = 0
-            dense_rewards['agent_2'] *= cls.scaling
+            dense_rewards['agent_2'] *= self.scaling
 
         return dense_rewards
 

@@ -41,8 +41,7 @@ class MACircEnv(MiniGridEnv):
 
         self.mission = "get to the green goal square"
 
-    @classmethod
-    def calc_dense_reward(cls, rewards):
+    def dense_reward_fn(self, rewards):
         return {agent_id: 0 for agent_id in rewards}
 
 register(
