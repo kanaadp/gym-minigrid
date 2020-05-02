@@ -10,7 +10,7 @@ class MACircEnv(MiniGridEnv):
         self,
         size=8,
         num_agents=2,
-        max_steps=40
+        max_steps=100
     ):
         super().__init__(
             grid_size=size,
