@@ -18,6 +18,7 @@ class MACounterCirc(MiniGridEnv):
             multiagent=True,
             agent_ids=['agent_1', 'agent_2']
         )
+        self.scaling = 1e-2
 
     def _gen_grid(self, width, height):
         # Create an empty grid
@@ -76,8 +77,25 @@ class MACounterCirc(MiniGridEnv):
         return obs_dict, reward_dict, done_dict, info_dict
 
 
-    def dense_reward_fn(self, rewards):
-        return {agent_id: 0 for agent_id in rewards}
+    def dense_reward_fn(self, info_dict):
+        dense_rewards = {}
+        if 'agent_1' in info_dict:
+            action_info = info_dict['agent_1']['action_info']
+            if action_info[0] == 'pickup_counter':
+                dense_rewards['agent_1'] = 1
+            else:
+                dense_rewards['agent_1'] = 0
+            dense_rewards['agent_1'] *= self.scaling
+
+        if 'agent_2' in info_dict:
+            action_info = info_dict['agent_2']['action_info']
+            if action_info[0] == 'pickup_counter':
+                dense_rewards['agent_2'] = 1
+            else:
+                dense_rewards['agent_2'] = 0
+            dense_rewards['agent_2'] *= self.scaling
+
+        return dense_rewards
 
 register(
     id='MiniGrid-MA-MACounterCirc-v0',
