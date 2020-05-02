@@ -10,12 +10,12 @@ class MultidoorCounter(MiniGridEnv, MultiAgentEnv):
 
     scaling = 1e-3
 
-    def __init__(self, height=4, width=8, randomize_key_pos=False):
+    def __init__(self, height=4, width=8, max_steps=30, randomize_key_pos=False):
         self.randomize_key_pos = randomize_key_pos
         super().__init__(
             height=height,
             width=width,
-            max_steps=10*height*width,
+            max_steps=max_steps,
             see_through_walls=True,
             multiagent=True,
             agent_ids=['agent_1', 'agent_2']
@@ -94,7 +94,7 @@ class MultidoorCounter6x11(MultidoorCounter):
 
 class MultidoorCounter6x11Random(MultidoorCounter):
     def __init__(self):
-        super().__init__(height=6, width=11, , max_steps=30, randomize_key_pos=True)
+        super().__init__(height=6, width=11, max_steps=30, randomize_key_pos=True)
 
 
 register(
