@@ -765,7 +765,8 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
         seed=1337,
         agent_view_size=7,
         agent_ids=DEFAULT_AGENT_LIST,
-        multiagent=False
+        multiagent=False,
+        should_render=False
     ):
         # Can't set both grid_size and width/height
         if grid_size:
@@ -814,6 +815,8 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
 
         # Initialize the RNG
         self.seed(seed=seed)
+
+        self.should_render = should_render
 
         # Initialize the state
         self.reset()
@@ -1213,6 +1216,8 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
 
     def step(self, agent_actions):
         self.env_step_count += 1
+        if self.should_render:
+            self.render(agent_view=False)
 
         if not self.multiagent:
             assert self.num_agents == 1, "Invalid action!"
@@ -1413,7 +1418,7 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
 
         return img
 
-    def render(self, mode='human', close=False, highlight=True, tile_size=TILE_PIXELS, agent_id=DEFAULT_AGENT_ID):
+    def render(self, mode='human', close=False, highlight=True, tile_size=TILE_PIXELS, agent_id=DEFAULT_AGENT_ID, agent_view=True):
         """
         Render the whole-grid human view
         """
@@ -1428,36 +1433,37 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
             self.window = gym_minigrid.window.Window('gym_minigrid')
             self.window.show(block=False)
 
-        # Compute which cells are visible to the agent
-        _, vis_mask = self.gen_obs_grid(agent_id)
+        if agent_view:
+            # Compute which cells are visible to the agent
+            _, vis_mask = self.gen_obs_grid(agent_id)
 
-        # Compute the world coordinates of the bottom-left corner
-        # of the agent's view area
-        f_vec = self.dir_vec(agent_id=agent_id)
-        r_vec = self.right_vec(agent_id=agent_id)
-        top_left = self.agents[agent_id].pos + f_vec * \
-            (self.agent_view_size-1) - r_vec * (self.agent_view_size // 2)
+            # Compute the world coordinates of the bottom-left corner
+            # of the agent's view area
+            f_vec = self.dir_vec(agent_id=agent_id)
+            r_vec = self.right_vec(agent_id=agent_id)
+            top_left = self.agents[agent_id].pos + f_vec * \
+                (self.agent_view_size-1) - r_vec * (self.agent_view_size // 2)
 
-        # Mask of which cells to highlight
-        highlight_mask = np.zeros(shape=(self.width, self.height), dtype=np.bool)
+            # Mask of which cells to highlight
+            highlight_mask = np.zeros(shape=(self.width, self.height), dtype=np.bool)
 
-        # For each cell in the visibility mask
-        for vis_j in range(0, self.agent_view_size):
-            for vis_i in range(0, self.agent_view_size):
-                # If this cell is not visible, don't highlight it
-                if not vis_mask[vis_i, vis_j]:
-                    continue
+            # For each cell in the visibility mask
+            for vis_j in range(0, self.agent_view_size):
+                for vis_i in range(0, self.agent_view_size):
+                    # If this cell is not visible, don't highlight it
+                    if not vis_mask[vis_i, vis_j]:
+                        continue
 
-                # Compute the world coordinates of this cell
-                abs_i, abs_j = top_left - (f_vec * vis_j) + (r_vec * vis_i)
+                    # Compute the world coordinates of this cell
+                    abs_i, abs_j = top_left - (f_vec * vis_j) + (r_vec * vis_i)
 
-                if abs_i < 0 or abs_i >= self.width:
-                    continue
-                if abs_j < 0 or abs_j >= self.height:
-                    continue
+                    if abs_i < 0 or abs_i >= self.width:
+                        continue
+                    if abs_j < 0 or abs_j >= self.height:
+                        continue
 
-                # Mark this cell to be highlighted
-                highlight_mask[abs_i, abs_j] = True
+                    # Mark this cell to be highlighted
+                    highlight_mask[abs_i, abs_j] = True
 
         # Render the whole grid
         img = self.grid.render(
@@ -1465,7 +1471,7 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
             [self.agents[agent_id].pos for agent_id in self.agent_ids],
             [self.agents[agent_id].dir for agent_id in self.agent_ids],
             [IDX_TO_COLOR[i] for i in range(len(self.agent_ids))],
-            highlight_mask=highlight_mask if highlight else None
+            highlight_mask=highlight_mask if agent_view and highlight else None
         )
 
         if mode == 'human':
