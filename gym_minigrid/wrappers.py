@@ -307,7 +307,7 @@ class WallMaskWrapper(gym.core.ObservationWrapper):
         env = self.unwrapped
         if env.multiagent:
             new_obs = {}
-            for agent_id in env.agent_ids:
+            for agent_id in obs:
                 image = obs[agent_id]
                 image = np.reshape(image, (-1, 3))
                 if self.wall_mask is None:
