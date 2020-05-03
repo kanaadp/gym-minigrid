@@ -783,6 +783,9 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
         # Number of cells (width and height) in the agent view
         self.agent_view_size = agent_view_size
 
+        # Penalty for colliding:
+        self.collision_penalty = 0.1
+
         # Observations are dictionaries containing an
         # encoding of the grid and a textual 'mission' string
         self.observation_space = spaces.Box(
@@ -1260,7 +1263,7 @@ class MiniGridEnv(MultiAgentEnv, gym.Env):
                     if other_id != agent_id and np.all(self.agents[other_id].pos == fwd_pos):
                         # collision between agents!
                         action_info = ("collision", other_id)
-                        reward_dict[agent_id] = -0.1
+                        reward_dict[agent_id] = -self.collision_penalty
                         break
                 else:
                     if fwd_cell == None or fwd_cell.can_overlap():
